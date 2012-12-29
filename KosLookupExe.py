@@ -1,8 +1,8 @@
 import cgi
 import ctypes
-import ctypes.wintypes
 import datetime
 import io
+from optparse import OptionParser
 import os
 import shutil
 import sys
@@ -12,18 +12,21 @@ import urllib
 import urllib2
 import webbrowser
 import wx
-import zipfile
-
-import wx
 import wx.html
+import zipfile
 
 try:
   import winsound
 except ImportError:
   winsound = None
 
-import ChatKosLookup
+try:
+  from scikits.audiolab.pysndfile.matapi import oggread
+  from scikits.audiolab import wavread, play
+except ImportError:
+  play = None
 
+import ChatKosLookup
 
 MINUS_TAG = u'[\u2212]'  # Unicode MINUS SIGN
 
@@ -39,6 +42,8 @@ def GetMyDocumentsDir():
 
 
 def GetEveLogsDir():
+  if options.chat_dir:
+    return options.chat_dir
   home = GetMyDocumentsDir()
   if not home:
     return None
@@ -172,6 +177,14 @@ class MainFrame(wx.Frame):
       except:
         # such as when there's no SystemQuestion sound, reported by some users.
         winsound = False
+    elif play and options.sound_file:
+      data = None
+      if options.sound_file.endswith("ogg"):
+        data, fs, _ = oggread(options.sound_file)
+      elif options.sound_file.endswith("wav"):
+        data, fs, _ = wavread(options.sound_file)
+      if data is not None:
+        play(data.T, fs)
 
   def UpdateLabels(self):
     self.status_bar.PopStatusText()
@@ -212,7 +225,7 @@ class MainFrame(wx.Frame):
     dlg = wx.MessageDialog(
         self,
         "KOS Lookup\nSee http://nrds.eu/\n"
-        "Version: 0.8",
+        "Version: 0.8b2",
         'About',
         wx.OK | wx.ICON_INFORMATION)
     dlg.ShowModal()
@@ -282,7 +295,7 @@ class MainFrame(wx.Frame):
         if filename not in namelist or z.read(filename) != contents:
           z.writestr(filename, contents)
 
-    wx.Execute('{} /update "{}"'.format(tmpfile.name, sys.executable))
+    wx.Execute("{} /update {}".format(tmpfile.name, sys.executable))
     sys.exit()
 
   def CheckForUpdate(self):
@@ -314,5 +327,17 @@ def main():
   app.MainLoop()
 
 
+def GetOptionsParser():
+  p = OptionParser()
+  p.add_option("-c", "--chat", dest="chat_dir", default="",
+               help="EVE chat log directory", metavar="chatlogs")
+  p.add_option("-s", "--sound", dest="sound_file", default="",
+               help="Sound file path for the KOS alert (wav or ogg)",
+               metavar="soundfile")  
+  return p
+
+
 if __name__ == '__main__':
+  p = GetOptionsParser()
+  (options, _) = p.parse_args()
   main()

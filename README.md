@@ -13,3 +13,17 @@ https://github.com/downloads/eve-val/nrds-tools/KosLookup-0.6.zip
 
 Jerub's Beta version:
 http://www.nrds.eu/downloads/KosLookup.exe
+
+Dave Drouin's fork of Jerub's Beta version that supports running on Linux with 
+sounds.  Additional requirements for playing sounds on Linux (installing audiolab):
+
+sudo apt-get install libsndfile-dev python-numpy cython
+git clone https://github.com/cournape/audiolab.git
+cd audiolab
+python setup.py install --user
+
+Then run KosLookupExe.py providing the location for the chat logs and a sound to 
+play when a KOS player is present.
+
+python KosLookupExe.py -c ~/EVE/logs/Chatlogs/ -s /usr/share/sounds/gnome/default/alerts/bark.ogg
+
